@@ -7,6 +7,7 @@
 import MySQLdb
 import copy
 from twisted.enterprise import adbapi
+import json
 
 class TutorialPipeline(object):
     def __init__(self, dbpool):
@@ -32,9 +33,13 @@ class TutorialPipeline(object):
 
     # pipeline默认调用
     def process_item(self, item, spider):
-        # 深拷贝
+        # 深拷贝 否则出现数据库中数据重复的情况
         asynItem = copy.deepcopy(item)
-        query = self.dbpool.runInteraction(self._conditional_insert, asynItem)
+
+        if spider.name == 'ZufangSpider':
+            query = self.dbpool.runInteraction(self._conditional_Zufang_insert, asynItem)
+        elif spider.name =='ZufangContentsSpider':
+            query = self.dbpool.runInteraction(self._conditional_Contents_insert, asynItem)
 
         #query = self.dbpool.runInteraction(self._conditional_insert, item)  # 调用插入的方法
         query.addErrback(self._handle_error, item, spider)  # 调用异常处理方法
@@ -42,11 +47,23 @@ class TutorialPipeline(object):
 
     # 写入数据库中
     # SQL语句在这里
-    def _conditional_insert(self, tx, item):
-        sql = "insert into zufang(title,link,pushtime) values(%s,%s,%s)"
+    def _conditional_Zufang_insert(self, tx, item):
+        sql = "insert into zufang(title,link,pushtime,commentcount) values(%s,%s,%s,%s)"
         params = (
-        item['title'], item['link'], item['time'])
+        item['title'], item['link'], item['time'],item['commentCount'])
         tx.execute(sql, params)
+
+    def _conditional_Contents_insert(self, tx, item):
+        sql = "insert into zf_contents(linkid,fromuser,detailtime,userlink,contents,pic) values(%s,%s,%s,%s,%s,%s)"
+        data = json.loads(item['contents']);
+        data['contents'].strip() if not "" else None
+        data['img'].strip() if not "" else None
+        print(data['contents'])
+        print(data['img'])
+        params = (item['linkId'].strip(),item['fromUser'].strip(), item['detailTime'].strip(), item['userLink'].strip(),data['contents'].strip(),data['img'].strip())
+
+        tx.execute(sql, params)
+
 
     # 错误处理方法
     def _handle_error(self, failue, item, spider):

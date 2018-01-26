@@ -1,6 +1,6 @@
 # coding=UTF-8
 from scrapy.spiders import Spider
-from tutorial.items import DoubanMovieItem
+from dbscrapy.items import DoubanMovieItem
 from scrapy import Request
 
 class DoubanMovieSpider(Spider):

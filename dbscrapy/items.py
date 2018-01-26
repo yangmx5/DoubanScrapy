@@ -20,4 +20,11 @@ class ZufangItem(Item):
     title = Field()
     link = Field()
     time = Field()
+    commentCount = Field()#计划改进有效评论数
 
+class ZufangContentItem(Item):
+	contents = Field()
+	fromUser = Field()
+	userLink = Field()
+	detailTime = Field()
+	linkId = Field()
